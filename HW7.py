@@ -1,8 +1,8 @@
 
-# Your name:
-# Your student id:
-# Your email:
-# List who you have worked with on this project:
+# Your name: Josh Richman
+# Your student id: 80041347
+# Your email: richmajo@umich.edu
+# List who you have worked with on this project: NONE
 
 import unittest
 import sqlite3
@@ -53,6 +53,20 @@ def make_positions_table(data, cur, conn):
 #     created for you -- see make_positions_table above for details.
 
 def make_players_table(data, cur, conn):
+    # get positions from Positions table
+    cur.execute("CREATE TABLE IF NOT EXISTS Players (id INTEGER PRIMARY KEY, name TEXT, position_id INT, birthyear INT, nationality TEXT)")
+    cur.execute("SELECT * FROM Positions")
+    positions = cur.fetchall()
+    players = data['squad']
+    for player in players:
+        position = player['position']
+        position_id = None
+        for pos in positions:
+            if pos[1] == position:
+                position_id = pos[0]
+        cur.execute("INSERT OR IGNORE INTO Players (id, name, position_id, birthyear, nationality) VALUES (?, ?, ?, ?, ?)", 
+               (player['id'], player['name'], position_id, player['dateOfBirth'][:4], player['nationality']))
+    conn.commit()
     pass
 
 ## [TASK 2]: 10 points
@@ -66,6 +80,12 @@ def make_players_table(data, cur, conn):
         # the player's name, their position_id, and their nationality.
 
 def nationality_search(countries, cur, conn):
+    players = []
+    for country in countries:
+        cur.execute("SELECT name, position_id, nationality FROM Players WHERE nationality=(?)",(country,))
+        for player in cur:
+            players.append(player)
+    return players        
     pass
 
 ## [TASK 3]: 10 points
@@ -85,6 +105,12 @@ def nationality_search(countries, cur, conn):
 
 
 def birthyear_nationality_search(age, country, cur, conn):
+    players = []
+    age_year = 2023 - age
+    cur.execute("SELECT name, nationality, birthyear FROM Players WHERE nationality=(?) AND birthyear<(?)",(country,age_year))
+    for player in cur:
+        players.append(player)
+    return players     
     pass
 
 ## [TASK 4]: 15 points
@@ -105,7 +131,19 @@ def birthyear_nationality_search(age, country, cur, conn):
     # HINT: You'll have to use JOIN for this task.
 
 def position_birth_search(position, age, cur, conn):
-       pass
+    cur.execute("SELECT * FROM Positions")
+    positions = cur.fetchall()
+    pos_id = 0
+    for pos in range(len(positions)):
+        if position == positions[pos][1]:
+            pos_id = positions[pos][0]
+    players = []
+    age_year = 2023 - age
+    cur.execute("SELECT name, position_id, birthyear FROM Players WHERE position_id=(?) AND birthyear>(?)",(pos_id,age_year))
+    for player in cur:
+        players.append((player[0],position,player[2]))
+    return players     
+    pass
 
 
 # [EXTRA CREDIT]
